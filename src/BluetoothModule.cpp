@@ -74,7 +74,7 @@ void BluetoothModule::enterATmode(uint8_t setATmode){
     Serial.println("Entering LIMITED AT mode");
     _setKeyPin(HIGH);
     delay(100);
-  }
+  } else return;
 
   _currATmode = static_cast<ATmode>(setATmode);
 
@@ -134,7 +134,14 @@ bool BluetoothModule::executeSingleATcommand(const String &cmd, String *respBuff
   // Response wait timeout
   const int TIMEOUT = 3000;
 
+  // ensure AT mode
   enterATmode(setATmode);
+  if (_currATmode == ATmode::OFF || _currATmode == ATmode::NONE){
+    Serial.println("Not is AT mode - aborting execution");
+    if (respBuff!=NULL) 
+      *respBuff = "ERROR:(-0)";
+    return false;
+  }
   
   // check if valid AT command
   if (cmd.length()<2 || strcmp(cmd.substring(0,2).c_str(), "AT") != 0) {
