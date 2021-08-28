@@ -4,41 +4,45 @@
 #include <ArduinoJson.h>
 #include "BluetoothModule.h"
 
+#define BT_BOOT_WAIT_TIME           1000
+#define READ_EXTRA_WAIT_TIME        50
+#define SEND_WAIT_TIME              READ_EXTRA_WAIT_TIME*2
+#define SEND_BUFFER_PAUSE_WAIT_TIME READ_EXTRA_WAIT_TIME/2
+#define BT_PIN_CHANGE_WAIT          10
+#define SERIAL_BUFFER_LENGTH        64
 
-#define BT_BOOT_WAIT_TIME 1000
-#define READ_EXTRA_WAIT_TIME 100
-#define SEND_WAIT_TIME (READ_WAIT_TIME/2)
-#define BT_PIN_CHANGE_WAIT 10
 
-
-BluetoothModule::BluetoothModule(uint8_t enPin, uint8_t keyPin, uint32_t baudRate, uint8_t rxPin, uint8_t txPin){
+BluetoothModule::BluetoothModule(uint8_t enPin, uint8_t keyPin, uint32_t baudRate, uint8_t rxPin, uint8_t txPin, bool isOn){
     _enPin = enPin;
     _keyPin = keyPin;
     _baudRate = baudRate;
-    *_BTserial = SoftwareSerial(rxPin, txPin);
+    
+    _BTserial = new SoftwareSerial(rxPin, txPin);
+    _BTserial->begin(_baudRate);
 
     pinMode(_enPin, OUTPUT);
-    _setEnablePin(LOW);
+    _setEnablePin(isOn);
     pinMode(_keyPin, OUTPUT);
     _setKeyPin(LOW);
 }
 
 void BluetoothModule::startup(){
-  _setEnablePin(HIGH);
   _setKeyPin(LOW);
+  _setEnablePin(HIGH);
 
   Serial.println("-- Startup Complete --");
 }
 
 String BluetoothModule::read(){
-  char buff[128];
+  char buff[256];
   int idx=0;
   bool courtesyWait=true;
+
+  Serial.println("Reading");
   while (true){
     // read BT buffer and store char
     if (BTserialAvailable()){
-      buff[idx++] = (*_BTserial).read();
-      delay(2);
+      buff[idx++] = _BTserial->read();
       courtesyWait=true;
     }
     // allow time for more incoming data
@@ -55,7 +59,6 @@ String BluetoothModule::read(){
   buff[idx] = '\0';
 
   Serial.println("Read Results: " + (String)buff);
-  Serial.println("End of Read Results");
   
   return String(buff);
 }
@@ -90,15 +93,15 @@ void BluetoothModule::exitATmode(){
     delay(BT_PIN_CHANGE_WAIT);
     _setEnablePin(HIGH);
     delay(BT_BOOT_WAIT_TIME);
-  } else {
-    Serial.println("Exiting LIMITED/NONE AT mode");
+  } else if (_currATmode == ATmode::LIMITED){
+    Serial.println("Exiting LIMITED AT mode");
     _setKeyPin(LOW);
     delay(100);
   }
 
   _currATmode = ATmode::OFF;
 
-  flush();
+  // flush();
 }
 
 void BluetoothModule::powerReset(){
@@ -130,21 +133,27 @@ void BluetoothModule::_setKeyPin(bool state){
     digitalWrite(_keyPin, state);    
 }
 
+bool BluetoothModule::isValidATcommand(const String &cmd){
+  return (cmd.length()<2 || strcmp(cmd.substring(0,2).c_str(), "AT")) != 0;
+}
+
 bool BluetoothModule::executeSingleATcommand(const String &cmd, String *respBuff, uint8_t setATmode){
   // Response wait timeout
   const int TIMEOUT = 3000;
 
   // ensure AT mode
-  enterATmode(setATmode);
-  if (_currATmode == ATmode::OFF || _currATmode == ATmode::NONE){
-    Serial.println("Not is AT mode - aborting execution");
+  if (_currATmode != setATmode) {
+    enterATmode(setATmode);
+  }
+  if (_currATmode == ATmode::OFF){
+    Serial.println("Not in AT mode - aborting execution");
     if (respBuff!=NULL) 
       *respBuff = "ERROR:(-0)";
     return false;
   }
   
   // check if valid AT command
-  if (cmd.length()<2 || strcmp(cmd.substring(0,2).c_str(), "AT") != 0) {
+  if (isValidATcommand(cmd)) {
     if (respBuff!=NULL) 
       *respBuff = "ERROR:(-1)";
     return false;
@@ -154,9 +163,9 @@ bool BluetoothModule::executeSingleATcommand(const String &cmd, String *respBuff
   // ensure/add "\r\n" to command
   // send command to BT serial
   if (strcmp(cmd.substring(cmd.length()-2).c_str(), "\r\n")==0) {
-      send(cmd);
+      _BTserial->print(cmd);
   } else{
-      send(cmd+"\r\n");
+      _BTserial->print(cmd+"\r\n");
   } 
 
   // wait for response
@@ -176,7 +185,7 @@ bool BluetoothModule::executeSingleATcommand(const String &cmd, String *respBuff
   // fill response buffer if applicable
   if (respBuff!=NULL){
     if (success && resp.length()>2) {
-      *respBuff = resp.substring(0,resp.length()-2);
+      *respBuff = resp.substring(0,resp.length()-4); //-4 because '\r\nOK'
     } else {
       *respBuff = resp;
     }
@@ -191,7 +200,7 @@ bool BluetoothModule::executeATCommands(String cmds[], bool resetArr[], int n, u
   Serial.println("Executing Many AT commands");
   String error;
   for(int i=0;i<n;i++){
-    if(!executeSingleATcommand(cmds[i], &error)) {
+    if(!executeSingleATcommand(cmds[i], &error, setATmode)) {
       Serial.println(error); 
     }
     if (resetArr[i]){
@@ -200,8 +209,8 @@ bool BluetoothModule::executeATCommands(String cmds[], bool resetArr[], int n, u
   }
 }
 
-bool BluetoothModule::BTserialAvailable(){
-  return (*_BTserial).available();
+int BluetoothModule::BTserialAvailable(){
+  return _BTserial->available();
 }
 
 bool BluetoothModule::waitForConnection(int timeoutSec, const String &addr){
@@ -210,9 +219,8 @@ bool BluetoothModule::waitForConnection(int timeoutSec, const String &addr){
   String respBuff;
   bool connectionVerified = false;
   unsigned long start = millis();
-  enterATmode(ATmode::LIMITED);
   while ((millis()-start) < (1000*timeoutSec)){
-    executeSingleATcommand("AT+STATE", &respBuff);
+    executeSingleATcommand("AT+STATE", &respBuff, ATmode::LIMITED);
     Serial.println(respBuff);
     if (strcmp(respBuff.c_str(), "+STATE:CONNECTED")==0){
       if (addr.length()>0){
@@ -223,43 +231,79 @@ bool BluetoothModule::waitForConnection(int timeoutSec, const String &addr){
       break;      
     }
   }
-  exitATmode();
   Serial.println("Connection Success: " + (String)connectionVerified);
   return connectionVerified;
 }
 
-void BluetoothModule::send(const String &msg){
-  Serial.println("Sending Message over BT: " + msg);
-  (*_BTserial).print(msg);
-  // delay(SEND_WAIT_TIME);
+void BluetoothModule::send(const String &payload){
+  DynamicJsonDocument json(256);
+  json["type"] = packetType::DATA;
+  json["data"] = payload;
+
+  sendJsonDoc(json);
 }
 
-void BluetoothModule::sendJsonData(DynamicJsonDocument &jsonDoc){
+void BluetoothModule::sendJsonDoc(DynamicJsonDocument &jsonDoc){
   // send json to specifed SoftwareSerial object
   Serial.print("Sending JSON: ");
-  serializeJson(jsonDoc, Serial);
+  // serializeJson(jsonDoc, Serial);
+  // Serial.println();
+
+  String BTserialBuff;
+  serializeJson(jsonDoc, BTserialBuff);
+
+  for (int i=0; i<BTserialBuff.length(); i++){
+    if (i%SERIAL_BUFFER_LENGTH/2 == 0) 
+      delay(SEND_BUFFER_PAUSE_WAIT_TIME);
+    _BTserial->write(BTserialBuff[i]);
+    Serial.write(BTserialBuff[i]);
+  }
   Serial.println();
-  serializeJson(jsonDoc, *_BTserial);
+
+  delay(SEND_WAIT_TIME);
 }
 
-DynamicJsonDocument BluetoothModule::parseJsonData(const String &data){
+DynamicJsonDocument BluetoothModule::convertToJsonDoc(const String &data){
   Serial.println("Parsing JSON string: " + data);
-  DynamicJsonDocument doc(128);
+  DynamicJsonDocument doc(256);
   deserializeJson(doc, data);
   return doc;  
 }
 
+uint8_t BluetoothModule::determinePacketType(DynamicJsonDocument &doc){
+  return doc["type"];
+}
+
+String BluetoothModule::retrievePacketData(DynamicJsonDocument &doc){
+  return doc["data"];
+}
+
+int BluetoothModule::retrieveATcommandsLength(DynamicJsonDocument &doc){
+  return doc["length"];
+}
+
+void BluetoothModule::retrieveATcommands(DynamicJsonDocument &doc, String ATcmds[], bool resetArr[], int n){
+  const char *tmpStr;
+
+  for (int i=0;i<n;i++){
+    tmpStr = doc["cmds"][i];
+    ATcmds[i] = (String)tmpStr;
+
+    resetArr[i] = doc["resetArr"][i];
+  }
+}
+
 void BluetoothModule::sendATCommands(String ATcommands[], bool resetArr[], int n){
-  DynamicJsonDocument json(128);
-  Serial.println("Creating JSON to send over BT");
+  DynamicJsonDocument json(256);
+  Serial.println("Sending AT commands to other device");
   // fill JSON with data
-  json["type"] = "AT";
+  json["type"] = packetType::AT;
   json["length"] = n;
   for (int i=0; i<n; i++){
-    json["ATcmds"][i] = ATcommands[i];
+    json["cmds"][i] = ATcommands[i];
     json["resetArr"][i] = resetArr[i];
   }
 
   // send JSON data through BT
-  sendJsonData(json);
+  sendJsonDoc(json);
 }
