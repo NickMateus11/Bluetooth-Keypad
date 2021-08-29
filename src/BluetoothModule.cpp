@@ -48,7 +48,7 @@ void BluetoothModule::startup(){
   Serial.println("-- Startup Complete --");
 }
 
-String BluetoothModule::read(){
+String BluetoothModule::read(bool *isOK){
   char buff[256];
   int idx=0;
   bool courtesyWait=true;
@@ -71,12 +71,17 @@ String BluetoothModule::read(){
   while(idx>0 && (buff[idx-1] == '\r' || buff[idx-1] == '\n')) idx--;
   
   // end string with null character
-  buff[idx] = '\0';
+  buff[idx] = 0;
 
   Serial.print("Read Results: ");
   Serial.println(buff);
+
+
+  if(isOK != nullptr && idx>=2){
+    *isOK = buff[idx-2]=='O' && buff[idx-1]=='K';
+  }
   
-  return (String)buff;
+  return buff;
 }
 
 bool BluetoothModule::waitForATandExecute(){
@@ -180,7 +185,7 @@ bool BluetoothModule::isValidATcommand(const String &cmd){
 
 bool BluetoothModule::executeSingleATcommand(const String &cmd, String *respBuff, uint8_t setATmode){
   // Response wait timeout
-  const int TIMEOUT = 3000;
+  const int TIMEOUT = 2000;
 
   // ensure AT mode
   if (setATmode != ATmode::NONE && _currATmode != setATmode) {
@@ -219,8 +224,12 @@ bool BluetoothModule::executeSingleATcommand(const String &cmd, String *respBuff
   }
 
   // read response from BT serial and ensure ends with "OK"
-  String resp = read();
-  bool success = strcmp(resp.substring(resp.length()-2).c_str(), "OK")==0;
+  bool success;
+  String resp = read(&success);
+  // sometimes read() returns with destroyed String value???
+  // Serial.println(resp);
+  // Serial.println(resp.length());
+
   Serial.println("AT command was 'OK': " + (String)success);
 
   // fill response buffer if applicable
@@ -239,11 +248,11 @@ bool BluetoothModule::executeSingleATcommand(const String &cmd, String *respBuff
 }
 
 bool BluetoothModule::executeATCommands(const char* cmds[], bool resetArr[], int n, uint8_t setATmode){
-  Serial.println("Executing AT commands:");
   
   bool success = true;
   bool mustReset = false;
 
+  Serial.println("Executing AT commands:");
   // Serial.println(n);
   // for(int i=0;i<n;i++){
   //   Serial.print(cmds[i]);

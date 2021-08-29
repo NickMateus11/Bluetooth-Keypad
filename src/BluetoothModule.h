@@ -49,7 +49,7 @@ public:
     int retrieveATcommandsLength(DynamicJsonDocument &doc);
     uint8_t determinePacketType(DynamicJsonDocument &doc);
     
-    String read();
+    String read(bool *isOK=nullptr);
 
     const char* retrievePacketData(DynamicJsonDocument &doc);
 
