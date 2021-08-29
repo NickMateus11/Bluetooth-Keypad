@@ -21,38 +21,63 @@
 
 BluetoothModule BTmodule = BluetoothModule(EN_PIN, KEY_PIN, BT_BAUD, RX_PIN, TX_PIN, HIGH);
 
-// String otherBTAddr = "0021,13,0092DC";
-// String selfBTAddr = "0021,13,0062D6";
+String otherBTAddr = "0021,13,0092DC";
+String selfBTAddr = "0021,13,0062D6";
 
-String selfConfigOnStart[] = {
-  "AT+DISC",
+const char* sendConfig[] = {
+  "AT+ORGL",
+  "AT+ROLE=1",
   "AT+UART=38400,0,0",
-  "AT+RESET"
+  "AT+IPSCAN=1024,1,1024,1",
+  ("AT+BIND=0021,13,0062D6" + selfBTAddr).c_str()
 };
-bool selfConfigOnStartResetArr[] = {
+bool sendConfigFuncs[] = {
   true,
+  true,
+  false,
   false,
   false
 };
-int ATmodeType = BluetoothModule::ATmode::LIMITED;
-int selfOnStartArrSize = sizeof(selfConfigOnStart) / sizeof(selfConfigOnStart[0]);
+int sendArrSize = sizeof(sendConfig) / sizeof(sendConfig[0]);
 
- 
+const char* selfConfig1[] = {
+   "AT+DISC",
+   "AT+ROLE=1",
+   "AT+UART=38400,0,0",
+   ("AT+BIND=0021,13,0062D6" + otherBTAddr).c_str()
+ };
+bool selfConfigFuncs1[] = {
+  false,
+  true,
+  false,
+  false,
+  false
+};
+int selfArrSize1 = sizeof(selfConfig1) / sizeof(selfConfig1[0]);
+
+const char* selfConfig2[] = {
+  "AT+ORGL",
+  "AT+UART=38400,0,0",
+};
+bool selfConfigFuncs2[] = {
+  true,
+  false,
+};
+int selfArrSize2 = sizeof(selfConfig2) / sizeof(selfConfig2[0]);
+
+
 void setup() 
 {
   Serial.begin(9600);
   Serial.println("Arduino is ready");
   Serial.println("Remember to select Both NL & CR in the serial monitor");
 
-  int timeout = 20;
-  if (BTmodule.waitForConnection(timeout)){
-    Serial.println("Connection Verified");
-  } else {
-    Serial.println("Connection Timed-Out");
+  BTmodule.executeATCommands(selfConfig1, selfConfigFuncs1, selfArrSize1, BluetoothModule::ATmode::LIMITED);
+  if(BTmodule.waitForConnection(20, otherBTAddr)){
+    if (BTmodule.sendATCommands(sendConfig, sendConfigFuncs, sendArrSize) && BTmodule.waitForACK()){
+      BTmodule.executeATCommands(selfConfig2, selfConfigFuncs2, selfArrSize2, BluetoothModule::ATmode::FULL);
+    }
   }
-
-  BTmodule.sendATCommands(selfConfigOnStart, selfConfigOnStartResetArr, selfOnStartArrSize);
-  BTmodule.send("Hello - DATA");
   
 }
 

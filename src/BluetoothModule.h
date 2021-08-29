@@ -1,7 +1,6 @@
 #ifndef BluetoothModule_h
 #define BluetoothModule_h
 
-#include <Arduino.h>
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
 
@@ -16,7 +15,8 @@ public:
     enum ATmode {
         FULL,
         LIMITED,
-        OFF
+        OFF,
+        NONE
     };
 
     enum packetType {
@@ -31,24 +31,27 @@ public:
     void exitATmode();
     void powerResetFlush();
     void powerReset();
-    void send(const String &payload);
-    void sendJsonDoc(DynamicJsonDocument &jsonDoc);
-    void sendATCommands(String ATcommands[], bool resetArr[], int n);
-    void retrieveATcommands(DynamicJsonDocument &doc, String ATcmds[], bool resetArr[], int n);
+    void sendData(const String &payload);
+    void sendKey(const char &key);
+    void sendJsonString(const char *jsonString);
+    void retrieveATcommands(DynamicJsonDocument &doc, const char* ATcmds[], bool resetArr[], int n);
 
-    bool executeATCommands(String cmds[], bool resetArr[], int n, uint8_t setATmode=ATmode::LIMITED);
+    bool sendATCommands(const char* ATcommands[], bool resetArr[], int n);
+    bool executeATCommands(const char* cmds[], bool resetArr[], int n, uint8_t setATmode=ATmode::LIMITED);
     bool executeSingleATcommand(const String &cmd, String *respBuff=NULL, uint8_t setATmode=ATmode::LIMITED);
     bool waitForConnection(int timeoutSec, const String &addr="");
     bool isValidATcommand(const String &cmd);
+    bool basicConfigReset();
+    bool waitForATandExecute();
+    bool waitForACK();
 
     int BTserialAvailable();
     int retrieveATcommandsLength(DynamicJsonDocument &doc);
     uint8_t determinePacketType(DynamicJsonDocument &doc);
-
-    DynamicJsonDocument convertToJsonDoc(const String &data);
     
     String read();
-    String retrievePacketData(DynamicJsonDocument &doc);
+
+    const char* retrievePacketData(DynamicJsonDocument &doc);
 
 private:
     // private variables
