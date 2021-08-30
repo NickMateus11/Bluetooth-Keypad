@@ -21,15 +21,15 @@
 
 BluetoothModule BTmodule = BluetoothModule(EN_PIN, KEY_PIN, BT_BAUD, RX_PIN, TX_PIN, HIGH);
 
-String otherBTAddr = "0021,13,0092DC";
-String selfBTAddr = "0021,13,0062D6";
+// char otherBTAddr[] = "0021,13,0092DC";
+// char selfBTAddr[] = "0021,13,0062D6";
 
 const char* sendConfig[] = {
   "AT+ORGL",
   "AT+ROLE=1",
   "AT+UART=38400,0,0",
   "AT+IPSCAN=1024,1,1024,1",
-  ("AT+BIND=0021,13,0062D6" + selfBTAddr).c_str()
+  "AT+BIND=0021,13,0062D6"
 };
 bool sendConfigFuncs[] = {
   true,
@@ -44,7 +44,7 @@ const char* selfConfig1[] = {
    "AT+DISC",
    "AT+ROLE=1",
    "AT+UART=38400,0,0",
-   ("AT+BIND=0021,13,0062D6" + otherBTAddr).c_str()
+   "AT+BIND=0021,13,0092DC"
  };
 bool selfConfigFuncs1[] = {
   false,
@@ -73,7 +73,7 @@ void setup()
   Serial.println("Remember to select Both NL & CR in the serial monitor");
 
   BTmodule.executeATCommands(selfConfig1, selfConfigFuncs1, selfArrSize1, BluetoothModule::ATmode::LIMITED);
-  if(BTmodule.waitForConnection(20, otherBTAddr)){
+  if(BTmodule.waitForConnection(20)){
     if (BTmodule.sendATCommands(sendConfig, sendConfigFuncs, sendArrSize) && BTmodule.waitForACK()){
       BTmodule.executeATCommands(selfConfig2, selfConfigFuncs2, selfArrSize2, BluetoothModule::ATmode::FULL);
     }
@@ -85,23 +85,27 @@ void loop()
 {
   // Keep reading from HC-05 and send to Arduino Serial Monitor
   if (BTmodule.BTserialAvailable()){
-    String str = BTmodule.read();
+    char *str;
+    BTmodule.read(str);
     Serial.println(str);
   }
 
   // Keep reading from Arduino Serial Monitor and send to HC-05
   if (Serial.available())
   {
-    String str = readAllFromSerial();
-    String response;
-    bool success = BTmodule.executeSingleATcommand(str, &response);
-    if (!success) Serial.println("ERROR: " + response);
+    char *str;
+    readAllFromSerial(str);
+    char* response;
+    bool success = BTmodule.executeSingleATcommand(str, response);
+    if (!success) {
+      Serial.print("ERROR: ");
+      Serial.println(response);
+    }
   }
  
 }
 
-String readAllFromSerial(){
-  char buff[256];
+void readAllFromSerial(char* buff){
   int idx=0;
   while (Serial.available()){
     buff[idx] = Serial.read();
@@ -109,5 +113,4 @@ String readAllFromSerial(){
     delay(2);
   }
   buff[idx] = '\0';
-  return String(buff);
 }

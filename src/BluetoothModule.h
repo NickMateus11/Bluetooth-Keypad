@@ -27,31 +27,30 @@ public:
     // public methods
     void startup();
     void flush();
-    void enterATmode(uint8_t setATmode=ATmode::FULL);
+    void enterATmode(int setATmode=ATmode::FULL);
     void exitATmode();
     void powerResetFlush();
     void powerReset();
-    void sendData(const String &payload);
-    void sendKey(const char &key);
+    void sendData(const char* payload);
+    void sendKey(const char key);
     void sendJsonString(const char *jsonString);
-    void retrieveATcommands(DynamicJsonDocument &doc, const char* ATcmds[], bool resetArr[], int n);
+    void retrieveATcommands(DynamicJsonDocument &doc, char* ATcmds[], bool resetArr[], int n);
+    void read(char* buff);
+    void retrievePacketData(DynamicJsonDocument &doc, char* data);
 
     bool sendATCommands(const char* ATcommands[], bool resetArr[], int n);
-    bool executeATCommands(const char* cmds[], bool resetArr[], int n, uint8_t setATmode=ATmode::LIMITED);
-    bool executeSingleATcommand(const String &cmd, String *respBuff=NULL, uint8_t setATmode=ATmode::LIMITED);
-    bool waitForConnection(int timeoutSec, const String &addr="");
-    bool isValidATcommand(const String &cmd);
+    bool executeATCommands(const char* cmds[], bool resetArr[], int n, int setATmode=ATmode::LIMITED);
+    bool executeSingleATcommand(const char* cmd, char* respBuff=NULL, int setATmode=ATmode::LIMITED);
+    bool waitForConnection(int timeoutSec, const char* addr=NULL);
+    bool isValidATcommand(const char* cmd);
     bool basicConfigReset();
     bool waitForATandExecute();
     bool waitForACK();
 
     int BTserialAvailable();
     int retrieveATcommandsLength(DynamicJsonDocument &doc);
-    uint8_t determinePacketType(DynamicJsonDocument &doc);
+    int determinePacketType(DynamicJsonDocument &doc);
     
-    String read(bool *isOK=nullptr);
-
-    const char* retrievePacketData(DynamicJsonDocument &doc);
 
 private:
     // private variables
