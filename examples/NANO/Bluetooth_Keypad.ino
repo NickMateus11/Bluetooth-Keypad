@@ -1,24 +1,43 @@
 
-#include "src/Keypad.h"
-#include "src/BluetoothModule.h"
-#include <SoftwareSerial.h>
 
+#include "src/settings.h"
+
+#include "src/Keypad.h"
+#include "src/ArduinoSleep.h"
+#include "src/BluetoothModule.h"
 
 #define BT_BAUD 38400
+
+#ifndef USE_NATIVE_SERIAL_FOR_BT
 #define RX_PIN 6
 #define TX_PIN 7
+#endif
+
 #define EN_PIN 12
 #define KEY_PIN 13
 #define ROW_PIN_START 2 
 #define COL_PIN_START 8 
+#define SLEEP_TIMEOUT 5000
 
-BluetoothModule BTmodule = BluetoothModule(EN_PIN, KEY_PIN, BT_BAUD, RX_PIN, TX_PIN, HIGH);
-char key_data;
+#ifndef USE_NATIVE_SERIAL_FOR_BT
+BluetoothModule BTmodule = BluetoothModule(EN_PIN, KEY_PIN, BT_BAUD, HIGH, RX_PIN, TX_PIN);
+#else
+BluetoothModule BTmodule = BluetoothModule(EN_PIN, KEY_PIN, BT_BAUD, HIGH);
+#endif
+
+#ifdef ENABLE_POWER_SAVING
+unsigned long timeSinceLastSleep = millis();
+#endif
 
 
 void setup() {
 
+  #ifndef USE_NATIVE_SERIAL_FOR_BT
   Serial.begin(9600);
+  #endif
+
+  BTmodule.startup();
+  
   keypadInit(ROW_PIN_START, COL_PIN_START);
 
   char initial_key = get_input();
@@ -35,7 +54,15 @@ void setup() {
 }
 
 void loop() {
-  key_data = get_input();
+
+  #ifdef ENABLE_POWER_SAVING
+  if ((millis()-timeSinceLastSleep) > SLEEP_TIMEOUT){
+    // enableSleep();
+    timeSinceLastSleep = millis();
+  }
+  #endif
+
+  char key_data = get_input();
   if (key_data) {
     BTmodule.sendKey(key_data);
     while(get_input() == key_data); // ensure button press accounted for only once

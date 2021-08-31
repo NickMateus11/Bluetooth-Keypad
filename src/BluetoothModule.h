@@ -1,15 +1,21 @@
 #ifndef BluetoothModule_h
 #define BluetoothModule_h
 
-#include <SoftwareSerial.h>
+#include <Arduino.h>
 #include <ArduinoJson.h>
+#include "settings.h"
+
+#ifndef USE_NATIVE_SERIAL_FOR_BT
+#include <SoftwareSerial.h>
+#endif
+
 
 class BluetoothModule 
 {
 
 public:
     // constructor
-    BluetoothModule(uint8_t enPin, uint8_t keyPin, uint32_t baudRate, uint8_t rxPin, uint8_t txPin, bool isOn=true);
+    BluetoothModule(uint8_t enPin, uint8_t keyPin, uint32_t baudRate, bool defaultState=HIGH, uint8_t rxPin=2, uint8_t txPin=3);
 
     // public enums
     enum ATmode {
@@ -58,7 +64,15 @@ private:
     uint8_t _enPin;
     uint8_t _keyPin;
     uint32_t _baudRate;
+
+    uint8_t _rxPin;
+    uint8_t _txPin;
+    bool _defaultState;
+    #ifndef USE_NATIVE_SERIAL_FOR_BT
     SoftwareSerial *_BTserial;
+    #else
+    HardwareSerial *_BTserial;
+    #endif
     ATmode _currATmode;
     
 

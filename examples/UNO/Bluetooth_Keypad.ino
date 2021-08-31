@@ -28,14 +28,14 @@ const char* sendConfig[] = {
   "AT+ORGL",
   "AT+ROLE=1",
   "AT+UART=38400,0,0",
-  "AT+IPSCAN=1024,1,1024,1",
+  // "AT+IPSCAN=1024,1,1024,1",
   ("AT+BIND=0021,13,0062D6" + selfBTAddr).c_str()
 };
 bool sendConfigFuncs[] = {
   true,
   true,
   false,
-  false,
+  // false,
   false
 };
 int sendArrSize = sizeof(sendConfig) / sizeof(sendConfig[0]);

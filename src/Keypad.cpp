@@ -1,8 +1,12 @@
 
+#include <Arduino.h>
 #include "Keypad.h"
 #include "ArduinoSleep.h"
-#include <Arduino.h>
-// #include <EnableInterrupt.h>
+#include "settings.h"
+
+#ifdef ENABLE_POWER_SAVING
+#include <EnableInterrupt.h>
+#endif
 
 
 char key_map[4][4] = { 
@@ -12,7 +16,6 @@ char key_map[4][4] = {
   {'*','0','#','D'} 
 };
 
-volatile bool button_flag = false;
 int colStart, rowStart;
 
 void keypadInit(int r, int c){
@@ -58,20 +61,21 @@ char get_input() {
   return button;
 }
 
-// void enable_keypad_int() {
-//   for (int i = 0; i < 4; i++) {
-//     enableInterrupt(colStart + i, keypad_ISR, FALLING);
-//   }
-// }
+#ifdef ENABLE_POWER_SAVING
+void enable_keypad_int() {
+  for (int i = 0; i < 4; i++) {
+    enableInterrupt(colStart + i, keypad_ISR, FALLING);
+  }
+}
 
-// void disable_keypad_int() {
-//   for (int i = 0; i < 4; i++) {
-//     disableInterrupt(colStart + i);
-//   }
-// }
+void disable_keypad_int() {
+  for (int i = 0; i < 4; i++) {
+    disableInterrupt(colStart + i);
+  }
+}
 
-// void keypad_ISR () {
-//   disableSleep();
-//   disable_keypad_int();
-//   button_flag = true;
-// }
+void keypad_ISR() {
+  disableSleep();
+  disable_keypad_int();
+}
+#endif
