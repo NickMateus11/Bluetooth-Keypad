@@ -3,10 +3,6 @@
 #include <Arduino.h>
 #include "settings.h"
 
-#ifdef ENABLE_POWER_SAVING
-#include <EnableInterrupt.h>
-#endif
-
 #ifndef USE_NATIVE_SERIAL_FOR_BT
 #define DEBUG_MODE
 #endif
@@ -35,11 +31,11 @@ int basicConfigArrSize = sizeof(basicConfig) / sizeof(basicConfig[0]);
 
 
 BluetoothModule::BluetoothModule(uint8_t enPin, uint8_t keyPin, uint32_t baudRate, bool defaultState, uint8_t rxPin, uint8_t txPin){
-    _enPin = enPin;
-    _keyPin = keyPin;
-    _baudRate = baudRate;
-    _rxPin = rxPin;
-    _txPin = txPin;
+    _enPin        = enPin;
+    _keyPin       = keyPin;
+    _baudRate     = baudRate;
+    _rxPin        = rxPin;
+    _txPin        = txPin;
     _defaultState = defaultState;
 }
 

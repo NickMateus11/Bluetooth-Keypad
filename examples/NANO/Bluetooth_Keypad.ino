@@ -1,5 +1,4 @@
 
-
 #include "src/settings.h"
 
 #include "src/Keypad.h"
@@ -26,7 +25,7 @@ BluetoothModule BTmodule = BluetoothModule(EN_PIN, KEY_PIN, BT_BAUD, HIGH);
 #endif
 
 #ifdef ENABLE_POWER_SAVING
-unsigned long timeSinceLastSleep = millis();
+unsigned long timeSinceLastSleep;
 #endif
 
 
@@ -51,14 +50,17 @@ void setup() {
 
   }
   while(get_input() == initial_key); // ensure key is released
+
+  timeSinceLastSleep = millis(); // start sleep time countdown
+
 }
 
 void loop() {
 
   #ifdef ENABLE_POWER_SAVING
   if ((millis()-timeSinceLastSleep) > SLEEP_TIMEOUT){
-    // enableSleep();
-    timeSinceLastSleep = millis();
+    enableSleep();  // sleep begins - no further code is executed until interrupt
+    timeSinceLastSleep = millis(); // only after waking up
   }
   #endif
 
