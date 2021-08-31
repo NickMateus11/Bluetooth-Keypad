@@ -19,13 +19,13 @@ const char* basicConfig[] = {
   "AT+DISC",
   "AT+ORGL",
   "AT+UART=38400,0,0",
-  // "AT+IPSCAN=1024,1,1024,1"
+  "AT+IPSCAN=1024,1,1024,1"
 };
 bool basicConfigResetArr[] = {
   true,
   true,
   false,
-  // false,
+  false,
 };
 int basicConfigArrSize = sizeof(basicConfig) / sizeof(basicConfig[0]);
 

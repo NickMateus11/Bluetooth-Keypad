@@ -19,7 +19,7 @@
 #define BT_BAUD 38400
 
 
-BluetoothModule BTmodule = BluetoothModule(EN_PIN, KEY_PIN, BT_BAUD, RX_PIN, TX_PIN, HIGH);
+BluetoothModule BTmodule = BluetoothModule(EN_PIN, KEY_PIN, BT_BAUD, HIGH, RX_PIN, TX_PIN);
 
 String otherBTAddr = "0021,13,0092DC";
 String selfBTAddr = "0021,13,0062D6";
@@ -28,14 +28,14 @@ const char* sendConfig[] = {
   "AT+ORGL",
   "AT+ROLE=1",
   "AT+UART=38400,0,0",
-  // "AT+IPSCAN=1024,1,1024,1",
+  "AT+IPSCAN=1024,1,1024,1",
   ("AT+BIND=0021,13,0062D6" + selfBTAddr).c_str()
 };
 bool sendConfigFuncs[] = {
   true,
   true,
   false,
-  // false,
+  false,
   false
 };
 int sendArrSize = sizeof(sendConfig) / sizeof(sendConfig[0]);
@@ -71,6 +71,8 @@ void setup()
   Serial.begin(9600);
   Serial.println("Arduino is ready");
   Serial.println("Remember to select Both NL & CR in the serial monitor");
+
+  BTmodule.startup();
 
   BTmodule.executeATCommands(selfConfig1, selfConfigFuncs1, selfArrSize1, BluetoothModule::ATmode::LIMITED);
   if(BTmodule.waitForConnection(20, otherBTAddr)){

@@ -1,10 +1,10 @@
 
 #include <Arduino.h>
 #include "Keypad.h"
-#include "ArduinoSleep.h"
 #include "settings.h"
 
 #ifdef ENABLE_POWER_SAVING
+#include "ArduinoSleep.h"
 #include <EnableInterrupt.h>
 #endif
 
