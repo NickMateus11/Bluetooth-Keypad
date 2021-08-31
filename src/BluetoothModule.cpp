@@ -384,7 +384,7 @@ void BluetoothModule::sendData(const String &payload){
 }
 
 void BluetoothModule::sendKey(const char &key){
-  _BTserial->write(key);
+  _BTserial->println(key); // char + \r\n
 }
 
 bool BluetoothModule::basicConfigReset(){
@@ -414,6 +414,7 @@ void BluetoothModule::sendJsonString(const char *jsonString){
     i++;
   }
 
+  _BTserial->println();
   #ifdef DEBUG_MODE
   Serial.println();
   #endif

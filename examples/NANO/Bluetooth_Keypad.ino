@@ -12,10 +12,10 @@
 #define TX_PIN 7
 #endif
 
-#define EN_PIN 12
-#define KEY_PIN 13
+#define EN_PIN 10
+#define KEY_PIN 11
 #define ROW_PIN_START 2 
-#define COL_PIN_START 8 
+#define COL_PIN_START 6 
 #define SLEEP_TIMEOUT 5000
 
 #ifndef USE_NATIVE_SERIAL_FOR_BT
