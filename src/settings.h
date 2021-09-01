@@ -4,7 +4,7 @@
 
 
 /* DONT FORGET TO SET THIS PROPERLY */
-// #define DEVICE_NANO
+#define DEVICE_NANO
 
 
 #ifdef DEVICE_NANO

@@ -49,7 +49,7 @@ void setup() {
   else if (initial_key == '*'){ // UNUSED
 
   }
-  while(get_input() == initial_key); // ensure key is released
+  // while(get_input() == initial_key); // ensure key is released
 
   timeSinceLastSleep = millis(); // start sleep time countdown
 
