@@ -5,11 +5,13 @@
 
 #include "src/BluetoothModule.h"
 #include <SoftwareSerial.h>
+
 // Connect the HC-05 TX to Arduino pin 2 RX. 
 // Connect the HC-05 RX to Arduino pin 3 TX through a voltage divider.
 
 // Enter AT Mode: cycle power to BT device while holding button - should blink LED slowly
 
+// BT module pin params
 #define RX_PIN 2
 #define TX_PIN 3
 
@@ -21,9 +23,11 @@
 
 BluetoothModule BTmodule = BluetoothModule(EN_PIN, KEY_PIN, BT_BAUD, HIGH, RX_PIN, TX_PIN);
 
+// Self and other BT addresses
 String otherBTAddr = "0021,13,0092DC";
 String selfBTAddr = "0021,13,0062D6";
 
+// AT command configurations to send/apply to self
 const char* sendConfig[] = {
   "AT+ORGL",
   "AT+ROLE=1",
@@ -72,11 +76,17 @@ void setup()
   Serial.println("Arduino is ready");
   Serial.println("Remember to select Both NL & CR in the serial monitor");
 
+  // Enable BT module - set pinmodes - open SoftwareSerial buffer
   BTmodule.startup();
 
+  // reset self AT config
   BTmodule.executeATCommands(selfConfig1, selfConfigFuncs1, selfArrSize1, BluetoothModule::ATmode::LIMITED);
+  
+  // Wait for connection to othe BT - timeout 20 sec
   if(BTmodule.waitForConnection(20, otherBTAddr)){
+    // send other BT module new config - wait for ACK reply to ensure other BT is in 'accepting config' state
     if (BTmodule.sendATCommands(sendConfig, sendConfigFuncs, sendArrSize) && BTmodule.waitForACK()){
+      // configure self with new config to allow other BT to connect as the master to this BT module
       BTmodule.executeATCommands(selfConfig2, selfConfigFuncs2, selfArrSize2, BluetoothModule::ATmode::FULL);
     }
   }
@@ -102,6 +112,7 @@ void loop()
  
 }
 
+// helper function - read from Serial (Serial.readString() is too slow - it has a big delay to wait and read the whole string)
 String readAllFromSerial(){
   char buff[256];
   int idx=0;
