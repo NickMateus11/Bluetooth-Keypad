@@ -5,7 +5,7 @@
 /* DONT FORGET TO SET THIS PROPERLY */
 
 // If the device is to be used on battery, with power saving enabled, and using pins 0 (RX) and 1 (TX)
-#define DEVICE_ATMEGA328P
+// #define DEVICE_ATMEGA328P
 
 
 #ifdef DEVICE_ATMEGA328P
