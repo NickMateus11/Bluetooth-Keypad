@@ -36,7 +36,7 @@ This portable bluetooth keypad can connect to any bluetooth device as a follower
 
 As mentioned, power consumption was heavily factored into the design of this device. Optimizations were done to reduce avg current consumption from ~40mA to ~10mA. Techniques were used such as: using low power devices, adding idle and sleep logic into the micro-processor, using a switch to cut/enable power to the entire system, as well as complex logic to switch the HC-05 BT module from follower to master when being paired with a second HC-05. A BT module connecting as a master actually consumes less power. This is because the master controls all the timings and data transmission windows allowing it to save power in between activity; whereas a follower must always be listening for it's paired master sending data.
 
-Holding the 0 (zero) key while reseting the device (push button on the back) will factory reset the HC-05 BT module. This allow for easier configuration, and any other BT devices to easily connect to it. Additionally, pressing # on device reset will put the BT module into configuration listening mode, where another HC-05 module can send it JSON formatted commands to setup/change the current configuration.
+Holding the 0 (zero) key while resetting the device (push button on the back) will factory reset the HC-05 BT module. This allow for easier configuration, and any other BT devices to easily connect to it. Additionally, pressing # on device reset will put the BT module into configuration listening mode, where another HC-05 module can send it JSON formatted commands to setup/change the current configuration.
 
 
 ## Images ##
