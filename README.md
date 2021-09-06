@@ -25,10 +25,10 @@ As mentioned, specific consideration was given to reducing power consumption of 
 | Optimization | mA (BT searching) | mA (BT connected & Idle) | mA (BT connected & Transmitting) |
 |--------------|-------------------|--------------------------|----------------------------------|
 | None         |        50mA       |            30mA          |                40mA              |
-| + Config IPSCAN | __12mA__ | 30mA | 40mA
-| + Master/Follower role switching | 12mA | __24mA__ | __30 mA__
-| + use ATmega328p (instead of Arduino Nano/Uno) | 12mA | __20mA__ | __25mA__
-| + MCU sleep | 12mA | __10mA__ | 25mA
+| + Config IPSCAN | ___12mA___ | 30mA | 40mA
+| + Master/Follower role switching | 12mA | ___24mA___ | ___30 mA___
+| + use ATmega328p (instead of Arduino Nano/Uno) | 12mA | ___20mA___ | ___25mA___
+| + MCU sleep | 12mA | ___10mA___ | 25mA
 
 
 ## Features ##
